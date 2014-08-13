@@ -6,7 +6,7 @@ script:
   # Bootstrap
   - wget git.io/hikK5g -qO- | sudo bash
   - cd ..
-  - git clone https://github.com:xtuple/xtuple-server.git
+  - git clone https://github.com/xtuple/xtuple-server.git
   - cd xtuple-server
   - npm install
 
