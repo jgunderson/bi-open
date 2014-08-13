@@ -1,66 +1,74 @@
 language: c
 
 script:
-  # Boostrap. This sets node to 0.11.13 which causes npm problems with bcrpyt and ursa.  Reset to 0.8 then causes caret trouble.
-  # try reset to 0.10  
+
+#before_install:
+  # Bootstrap
   - wget git.io/hikK5g -qO- | sudo bash
   - cd ..
-  - n 0.8
-  - npm update -g npm
+  - git clone git@github.com:xtuple/xtuple-server.git
+  - cd xtuple-server
+  - npm install
 
-  # The FOSS xtuple-server requires an existing xtuple 
-  - git clone https://github.com/xtuple/xtuple.git  
-  - cd xtuple
-  - git checkout 4_6_x
-  - git submodule update --init --recursive --quiet
-  - npm install --quiet
+  # The FOSS xtuple-server requires an existing xtuple directory to start working off of
   - cd ..
-  
-  # And we need extensions for bi-open
-  - git clone https://github.com/xtuple/xtuple-extensions.git  
+  - git clone https://github.com/xtuple/xtuple.git --recursive
+  - git clone https://github.com/jgunderson/xtuple-extensions.git
+
+  # Temporary hack: we need the bleeding-edge code to access the BI reshuffle. XXX remove after 4.6 beta
+  - sudo chmod -R 777 /usr/local/lib
+  - n 0.8
   - cd xtuple-extensions
-  - git checkout 4_6_x
+  - git checkout ci-chg2
   - git submodule update --init --recursive --quiet
   - npm install --quiet
-  - cd ..
   
-  # Install xtuple-server
-  - npm install -g xtuple-server
+  # Do we need to be back to node 11 for xtuple npm?  of can we use:
+  - npm update -g npm
+  - cd ../xtuple
+    #- git checkout 4_6_x
+    #- git submodule update --init --recursive --quiet
+  - npm install --quiet
 
-  # Use the server to do an install and build xtuple
-  - sudo xtuple-server install-dev --xt-version 4.5.1 --xt-demo --local-workspace ./xtuple --xt-adminpw admin
-  
-  # One of the above sets node to 0.11.13 so back again.
-  - n 0.8
-  
-  # Install the bi-open extension. TODO: build this into the xtuple-server install as a flag
-  - cd xtuple
-  - ./scripts/build_app.js -d demo_dev -e ../xtuple-extensions/source/bi_open
-  
+  # Use the server to do an install
+  # must be n 0.11
+  - sudo xtuple-server install-dev --xt-demo --xt-adminpw admin
+  - cd ..
+
+  #install:
+
   # Install BI and perform ETL
-  - cd ../bi-open/scripts
+  - sudo chmod -R 777 /usr/local/lib
+  - n 0.8
+  - cd bi-open/scripts
+  - git checkout ci-chg2
   - bash build_bi.sh -eblm -c ../../xtuple/node-datasource/config.js -d demo_dev -P admin
   - bash start_bi.sh
-  
-  # Start the app.
+
+  # Install bi-open.
   - cd ../../xtuple
+  - ./scripts/build_app.js -d demo_dev -e ../xtuple-extensions/source/bi_open
+
+#before_script:
+  # Start the app.
   - npm start > console.log &
   - sleep 10
 
+#script:
   # Run a test to make sure that BI is accessible and the ETL worked
-  - cd ../xtuple-extensions
-  - cp ../xtuple/test/lib/login_data.js test/lib/login_data.js
+  - cd ../private-extensions
+  #- cat test/lib/sample_login_data.js | sed 's#org:.*#org: \"demo_dev\",#' > test/lib/login_data.js
+  - cp ../xtuple/test/lib/login_data.js* test/lib/login_data.js
   - npm run-script test-bi_open
-  
-  # diagostics (move to after failure)
+
+  #move to after-failure
   - cat test/lib/login_data.js
   - cat ../ErpBI/data-integration/properties/psg-linux/.kettle/kettle.properties
   - cat ../ErpBI/biserver-ce/tomcat/logs/catalina.out
   - cat ../xtuple/console.log
-
+  - ls -l ~/xtuple
+  - ls -l ~/xtuple/xtuple
+  - ls -Rl ~/.xtuple
+  
 after_failure:
-  - sudo cat /var/spool/cron/crontabs/travis
-  - sudo cat /var/spool/cron/crontabs/root
-  - sudo find / -name xtuple-server.log
-  - sudo cat xtuple-server.log
   - env
