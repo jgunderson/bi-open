@@ -17,7 +17,7 @@ script:
   - git clone https://github.com/xtuple/xtuple.git
   - git clone https://github.com/xtuple/xtuple-extensions.git
 
-  - sudo n 0.10  # TODO no sudo here!
+  # sudo n 0.10  # TODO no sudo here!
   - cd xtuple-extensions
   - git checkout 4_7_x
   - git submodule update --init --recursive --quiet
