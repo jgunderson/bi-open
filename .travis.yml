@@ -9,8 +9,17 @@ cache:
       - ~/.m2
 
 script:
+
+  - echo $JAVA_HOME
+  - echo $M2_HOME
+  - echo $M2
+
   # Bootstrap
   - wget xtuple.com/bootstrap -qO- | sudo bash
+  
+  - echo $JAVA_HOME
+  - echo $M2_HOME
+  - echo $M2
   
   # Install server. Can't use npm because of user propmt?
   - npm install -g xtuple-server
